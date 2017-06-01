@@ -7,7 +7,7 @@ class Wheel(object):
         #wheel data lists name, weight (kg) and cost
         #for each wheel type
         wheel_data = {"a":["el cheapo",1,30], 
-                      "b":["classic",1.5,55],
+                      "b":["classic",1.5,90],
                       "c":["royal",0.75,120]
                      }
         self.wheel_type = wheel_type 
@@ -15,14 +15,6 @@ class Wheel(object):
         self.weight = wheel_data[wheel_type][1]
         self.cost = wheel_data[wheel_type][2]
     
-    #accessors        
-    def get_name(self):
-        return self.name
-    def get_weight(self):
-        return self.weight
-    def get_cost(self):
-        return self.cost
-        
 class Frame(object):
     def __init__(self,frame_type):
         
@@ -30,43 +22,24 @@ class Frame(object):
         #for each frame type
         frame_data = {"a":["woody",17,50],
                       "b":["steely",15,150],
-                      "c":["carbon-fibery",8,900]
+                      "c":["carbon-fibery",8,500]
                      }
         self.frame_type = frame_type 
         self.name = frame_data[frame_type][0]
         self.weight = frame_data[frame_type][1]
         self.cost = frame_data[frame_type][2]
     
-    #accessors        
-    def get_name(self):
-        return self.name
-    def get_weight(self):
-        return self.weight
-    def get_cost(self):
-        return self.cost
-        
 class Bicycle(object):
     def __init__(self, name, wheels, frame):
         self.name = name
         self.wheels = wheels
         self.frame = frame
-        self.weight = (wheels[0].get_weight() + 
-                       wheels[1].get_weight() +
-                       frame.get_weight())
-        self.cost = (wheels[0].get_cost() + 
-                     wheels[1].get_cost() +
-                     frame.get_weight())
-    #accessors  
-    def get_name(self):
-        return self.name
-    def get_frame(self):
-        return self.frame
-    def get_wheels(self):
-        return self.wheels
-    def get_weight(self):
-        return self.weight
-    def get_cost(self):
-        return self.cost
+        self.weight = (wheels[0].weight+ 
+                       wheels[1].weight+
+                       frame.weight)
+        self.cost = (wheels[0].cost + 
+                     wheels[1].cost +
+                     frame.cost)
 
 class Bikeshop(object):
     def __init__(self,name):
@@ -77,25 +50,33 @@ class Bikeshop(object):
     
     #method of sellinf bicycle to customer
     def sell(self, bicycle, customer):
-        price = bicycle.get_cost*(1+self.margin)
+        price = bicycle.cost*(1+self.margin)
         #customer.buy returns true if they can afford it
         if customer.buy(bicycle,price):
             #update profit leger
-            self.profit = self.profit + bicycle.get_cost * self.margin
-            #use list comprehension to remove from inventory
+            self.profit = self.profit + bicycle.cost * self.margin
+            #use list comprehension to remove from inventory list
             self.inventory = [unit for unit in self.inventory 
                               if unit is not bicycle]
+                              
+    def gen_selection(self):
+        selection = []
+        for bike in self.inventory:
+            price = bike.cost*(1+self.margin)
+            selection.append([bike,price])
+        return selection
+        
+    def gen_budget_selection(self,budget):
+        selection = []
+        for bike in self.inventory:
+            price = bike.cost*(1+self.margin)
+            if price <= budget:
+                selection.append([bike,price])
+        return selection
                               
     #method for adding bicycle to inventory
     def stock(self, bicycle):
         self.inventory.append(bicycle)
-    #accessors
-    def get_name(self):
-        return self.name
-    def get_profit(self):
-        return self.profit
-    def get_inventory(self):
-        return self.inventory
             
 class Customer(object):
     def __init__(self,name, budget):
@@ -109,20 +90,12 @@ class Customer(object):
             self.budget = self.budget - price
             self.owned_bikes.append(bicycle)
             print(str(self.name) + " bought " +
-                  bicycle.get_name + " for " +
+                  bicycle.name + " for " +
                   str(price))
             return True
         else:
             print("can't afford it")
             return False
-            
-    #accessors   
-    def get_name(self):
-        return self.name
-    def get_budget(self):
-        return self.budget
-    def get_owned_bikes(self):
-        return self.owned_bikes
 
 
 ###THIS IS OUR "MAIN" TESTING METHOD FOR NOW
@@ -132,10 +105,11 @@ if __name__ == '__main__':
     n1 = Wheel("a")
     n2 = Wheel("a")
     nf = Frame("a")
-    the_neptune = Bicycle("the_neptune", [n1, n2], nf)
+    #the_neptune = Bicycle("the_neptune", [n1, n2], nf)
+    the_neptune = Bicycle("the_neptune", [Wheel("a"), Wheel("a")], Frame("a"))
     
-    b1 = Wheel("a")
-    b2 = Wheel("a")
+    b1 = Wheel("b")
+    b2 = Wheel("b")
     bf = Frame("a")
     the_badger = Bicycle("the_badger", [b1, b2], bf)
     
@@ -144,13 +118,13 @@ if __name__ == '__main__':
     wf = Frame("b")
     the_winston = Bicycle("the_winston", [w1, w2], wf)
     
-    s1 = Wheel("b")
-    s2 = Wheel("b")
+    s1 = Wheel("c")
+    s2 = Wheel("c")
     sf = Frame("b")
     the_stanley = Bicycle("the_stanley", [s1, s2], sf)
     
-    r1 = Wheel("c")
-    r2 = Wheel("c")
+    r1 = Wheel("b")
+    r2 = Wheel("b")
     rf = Frame("c")
     the_rolls = Bicycle("the_rolls", [r1, r2], rf)
     
@@ -168,19 +142,37 @@ if __name__ == '__main__':
     a_shop.stock(the_badger)
     a_shop.stock(the_neptune)
     
+    #we use a loop to print available selection
+    for item in a_shop.gen_selection():
     
+        print(item[0].name + " .... " + str(item[1]) +"$")
     
+    #instantiate some customers
     bob = Customer("Bob", 1000)
     joe = Customer("Joe",500)
     ted = Customer("Ted",200)
     
+    
+    #print a list for what each customer can afford
+    print("\n \nBob can afford the following:")
+    for item in a_shop.gen_budget_selection(bob.budget):
+    
+        print(item[0].name + " .... " + str(item[1]) +"$")
+    
+    print("\n \nJoe can afford the following:")
+    for item in a_shop.gen_budget_selection(joe.budget):
+    
+        print(item[0].name + " .... " + str(item[1]) +"$")
+        
+    print("\n \nTed can afford the following:")
+    for item in a_shop.gen_budget_selection(ted.budget):
+    
+        print(item[0].name + " .... " + str(item[1]) +"$")
+    
 
     
     
-    print(str(the_neptune.get_name()))
-    print(the_neptune.get_weight())
-    print(the_neptune.get_cost())
-    
-    
-    
+##
+#REMOVE accessors
+#create retail_price attribute for each bicycle
     
